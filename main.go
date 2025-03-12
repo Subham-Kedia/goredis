@@ -10,27 +10,30 @@ import (
 )
 
 func main() {
+	// asynchronously starting the server
 	server := NewServer(Config{ListenAddress: ":5001"})
-	// goroutine to start the server
 	go func() {
 		log.Fatal(server.Start())
 	}()
 
-	time.Sleep(time.Second)
+	// waiting for the server to start
+	time.Sleep(time.Second * 2)
 
-	// 10 client requesting for setting values
-	for i := range 10 {
-		client := client.NewClient(":5001")
+	// creating a client and setting and getting 10 keys
+	client := client.NewClient(":5001")
+	for i := range 1000 {
 		err := client.Set(context.TODO(), fmt.Sprintf("foo%d", i), fmt.Sprintf("bar%d", i))
 		if err != nil {
 			log.Fatal(err)
 		}
-		_, err = client.Get(context.TODO(), fmt.Sprintf("foo%d", i))
-		if err != nil {
-			log.Fatal(err)
-		}
+		// _, err = client.Get(context.TODO(), fmt.Sprintf("foo%d", i))
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
 	}
+	// waiting for the client to finish and server to process the requests
+	time.Sleep(time.Second * 2)
 
-	time.Sleep(time.Second)
+	// printing the data stored in the server
 	fmt.Println(server.kv.data)
 }

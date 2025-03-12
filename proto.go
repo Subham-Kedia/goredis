@@ -39,13 +39,11 @@ func parseMessage(raw string) (Command, error) {
 			for i, c := range v.Array() {
 				switch c.String() {
 				case CommandSet:
-					// some error handling like length should be 3
 					cmd = &SetCommand{
 						key:   v.Array()[i+1].String(),
 						value: v.Array()[i+2].String(),
 					}
 				case CommandGet:
-					// some error handling like length should be 2
 					cmd = &GetCommand{
 						key: v.Array()[i+1].String(),
 					}

@@ -43,7 +43,7 @@ func (s *Server) Start() error {
 	}
 	s.ln = ln
 	go s.loop()
-	slog.Info("[SERVER STARTING]", "address", s.ListenAddress)
+	slog.Info("server listening", "address", s.ListenAddress)
 	return s.AcceptLoop()
 }
 
@@ -52,26 +52,25 @@ func (s *Server) loop() {
 		select {
 		case rawMsg := <-s.msgCh:
 			if err := s.handleRawMessage(rawMsg); err != nil {
-				slog.Error("handle message error", "err", err)
+				slog.Error("message handling error", "err", err)
 			}
 		case <-s.quitCh:
 			return
 		case peer := <-s.addPeerCh:
-			slog.Info("peer added to server", "remoteAddr", peer.conn.RemoteAddr())
 			s.peers[peer] = true
+			slog.Info("peer added to server", "remoteAddr", peer.conn.RemoteAddr())
 		}
 	}
 }
 
 func (s *Server) AcceptLoop() error {
-	// handling incoming connections in a loop (allowing multiple connections)
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
-			slog.Error("accept error", "err", err)
+			slog.Error("new connection accept error", "err", err)
 			continue
 		}
-		slog.Info("connection request recieved", "remoteAddr", conn.RemoteAddr())
+		slog.Info("connection request accepted", "remoteAddr", conn.RemoteAddr())
 		go s.handleConn(conn)
 	}
 }
@@ -79,7 +78,6 @@ func (s *Server) AcceptLoop() error {
 func (s *Server) handleConn(conn net.Conn) {
 	peer := NewPeer(conn, s.msgCh)
 	s.addPeerCh <- peer
-	slog.Info("peer connected", "remoteAddr", conn.RemoteAddr())
 	if err := peer.readLoop(); err != nil {
 		slog.Error("read error", "err", err, "remoteAddr", conn.RemoteAddr())
 	}
