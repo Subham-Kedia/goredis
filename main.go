@@ -21,15 +21,17 @@ func main() {
 
 	// creating a client and setting and getting 10 keys
 	client := client.NewClient(":5001")
-	for i := range 1000 {
+	for i := range 10 {
 		err := client.Set(context.TODO(), fmt.Sprintf("foo%d", i), fmt.Sprintf("bar%d", i))
 		if err != nil {
 			log.Fatal(err)
 		}
-		// _, err = client.Get(context.TODO(), fmt.Sprintf("foo%d", i))
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
+		// time.Sleep(time.Second)
+		_, err = client.Get(context.TODO(), fmt.Sprintf("foo%d", i))
+		if err != nil {
+			log.Fatal(err)
+		}
+		// time.Sleep(time.Second)
 	}
 	// waiting for the client to finish and server to process the requests
 	time.Sleep(time.Second * 2)

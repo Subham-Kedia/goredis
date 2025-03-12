@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"net"
 )
@@ -12,13 +11,18 @@ type Config struct {
 	ListenAddress string
 }
 
+type Message struct {
+	cmd  Command
+	peer *Peer
+}
+
 type Server struct {
 	Config
 	peers     map[*Peer]bool
 	ln        net.Listener
 	addPeerCh chan *Peer
 	quitCh    chan struct{}
-	msgCh     chan []byte
+	msgCh     chan Message
 	kv        *KV
 }
 
@@ -31,7 +35,7 @@ func NewServer(config Config) *Server {
 		peers:     make(map[*Peer]bool),
 		addPeerCh: make(chan *Peer),
 		quitCh:    make(chan struct{}),
-		msgCh:     make(chan []byte),
+		msgCh:     make(chan Message),
 		kv:        NewKV(),
 	}
 }
@@ -50,8 +54,8 @@ func (s *Server) Start() error {
 func (s *Server) loop() {
 	for {
 		select {
-		case rawMsg := <-s.msgCh:
-			if err := s.handleRawMessage(rawMsg); err != nil {
+		case msg := <-s.msgCh:
+			if err := s.handleMessage(msg); err != nil {
 				slog.Error("message handling error", "err", err)
 			}
 		case <-s.quitCh:
@@ -83,19 +87,17 @@ func (s *Server) handleConn(conn net.Conn) {
 	}
 }
 
-func (s *Server) handleRawMessage(rawMsg []byte) error {
-	slog.Info("message recieved", "msg", string(rawMsg))
-	cmd, err := parseMessage(string(rawMsg))
-	if err != nil {
-		return err
-	}
-	switch c := cmd.(type) {
+func (s *Server) handleMessage(msg Message) error {
+	switch c := msg.cmd.(type) {
 	case *SetCommand:
 		s.kv.Set(c.key, c.value)
+		msg.peer.Send([]byte("+OK\r\n"))
 	case *GetCommand:
 		val, ok := s.kv.Get(c.key)
 		if ok {
-			fmt.Println(string(val))
+			msg.peer.Send(val)
+		} else {
+			msg.peer.Send([]byte("$-1\r\n"))
 		}
 	}
 	return nil
