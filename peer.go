@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -24,6 +25,7 @@ func (p *Peer) readLoop() error {
 	rd := resp.NewReader(p.conn)
 	for {
 		v, _, err := rd.ReadValue()
+    fmt.Println(v)
 		if err == io.EOF {
 			break
 		}
