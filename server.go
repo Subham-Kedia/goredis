@@ -21,7 +21,7 @@ type Server struct {
 	peers     map[*Peer]bool
 	ln        net.Listener
 	addPeerCh chan *Peer
-	quitCh    chan struct{}
+	quitCh    chan any
 	msgCh     chan Message
 	kv        *KV
 }
@@ -34,7 +34,7 @@ func NewServer(config Config) *Server {
 		Config:    config,
 		peers:     make(map[*Peer]bool),
 		addPeerCh: make(chan *Peer),
-		quitCh:    make(chan struct{}),
+		quitCh:    make(chan any),
 		msgCh:     make(chan Message),
 		kv:        NewKV(),
 	}
