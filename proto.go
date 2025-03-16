@@ -1,8 +1,9 @@
 package main
 
 const (
-	CommandSet = "SET"
-	CommandGet = "GET"
+	CommandSet  = "SET"
+	CommandGet  = "GET"
+	CommandQuit = "quit"
 )
 
 type Command any
@@ -13,4 +14,7 @@ type SetCommand struct {
 
 type GetCommand struct {
 	key string
+}
+
+type QuitCommand struct {
 }

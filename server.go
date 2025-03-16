@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net"
 )
@@ -59,10 +60,10 @@ func (s *Server) loop() {
 				slog.Error("message handling error", "err", err)
 			}
 		case <-s.quitCh:
-			return
-		case peer := <-s.addPeerCh:
-			s.peers[peer] = true
-			slog.Info("peer added to server", "remoteAddr", peer.conn.RemoteAddr())
+			fmt.Print("MSG recieved on server channel")
+		case p := <-s.addPeerCh:
+			s.peers[p] = true
+			slog.Info("peer added to server", "remoteAddr", p.conn.RemoteAddr())
 		}
 	}
 }
@@ -83,7 +84,7 @@ func (s *Server) handleConn(conn net.Conn) {
 	peer := NewPeer(conn, s.msgCh)
 	s.addPeerCh <- peer
 	if err := peer.readLoop(); err != nil {
-		slog.Error("read error", "err", err, "remoteAddr", conn.RemoteAddr())
+		slog.Error("read error", "err", err, "remoteAddr", peer.conn.RemoteAddr())
 	}
 }
 
@@ -99,6 +100,12 @@ func (s *Server) handleMessage(msg Message) error {
 		} else {
 			msg.peer.Send([]byte("$-1\r\n"))
 		}
+	case *QuitCommand:
+		fmt.Println("Quit command recieved")
+		s.peers[msg.peer] = false
+		msg.peer.conn.Close()
+	default:
+		msg.peer.Send([]byte("Invalid Request\r\n"))
 	}
 	return nil
 }

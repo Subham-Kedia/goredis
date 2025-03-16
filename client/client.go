@@ -24,12 +24,17 @@ func NewClient(address string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Set(ctx context.Context, key, value string) error {
+func (c *Client) Set(ctx context.Context, key, value string) (string, error) {
 	var buf bytes.Buffer
 	wr := resp.NewWriter(&buf)
 	wr.WriteArray([]resp.Value{resp.StringValue("SET"), resp.StringValue(key), resp.StringValue(value)})
 	_, err := c.conn.Write(buf.Bytes())
-	return err
+	if err != nil {
+		return "", nil
+	}
+	b := make([]byte, 1024)
+	n, err := c.conn.Read(b)
+	return string(b[:n]), err
 }
 
 func (c *Client) Get(ctx context.Context, key string) (string, error) {
@@ -37,14 +42,14 @@ func (c *Client) Get(ctx context.Context, key string) (string, error) {
 	wr := resp.NewWriter(&buf)
 	wr.WriteArray([]resp.Value{resp.StringValue("GET"), resp.StringValue(key)})
 	_, err := c.conn.Write(buf.Bytes())
-  if err != nil {
-    return "", err
-  }
-  b := make([]byte, 1024)
-  n , err := c.conn.Read(b)
-  return string(b[:n]), err
+	if err != nil {
+		return "", err
+	}
+	b := make([]byte, 1024)
+	n, err := c.conn.Read(b)
+	return string(b[:n]), err
 }
 
 func (c *Client) Close() error {
-  return c.conn.Close()
+	return c.conn.Close()
 }

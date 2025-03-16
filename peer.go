@@ -25,12 +25,14 @@ func (p *Peer) readLoop() error {
 	rd := resp.NewReader(p.conn)
 	for {
 		v, _, err := rd.ReadValue()
-    fmt.Println(v)
+		// Above line is blocking
+		fmt.Println(v)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Println("client closed")
+			break
 		}
 		if v.Type() == resp.Array {
 			for _, value := range v.Array() {
@@ -54,6 +56,11 @@ func (p *Peer) readLoop() error {
 						cmd: &GetCommand{
 							key: v.Array()[1].String(),
 						},
+						peer: p,
+					}
+				case CommandQuit:
+					p.msgCh <- Message{
+						cmd:  &QuitCommand{},
 						peer: p,
 					}
 				}
